@@ -1,4 +1,20 @@
 <?php
+// funcionalidad que se ejecuta cuando el formulario es enviado por el metodo POST
+$respuesta_formulario = '';
+if ($_POST) {
+    $nombre = $_POST['nombre'];
+    $email = $_POST['email'];
+    $servicio = $_POST['servicio'];
+    $direccion = $_POST['direccion'];
+    $mensaje = $_POST['mensaje'];
+    $honeypot_field = $_POST['honeypot_field'];
+    if ($honeypot_field) {
+        $respuesta_formulario = 'Error al enviar el formulario';
+    } else {
+        $respuesta_formulario = 'Formulario enviado correctamente';
+    }
+}
+
 // Función generica para obtener data de la API
 function obtenerDataAPI($endpoint, $token)
 {
@@ -403,6 +419,149 @@ $respuestaEndpointPreguntas = json_encode($respuestaEndpointPreguntas);
     </footer>
 
     <script src="./assets/js/bootstrap.min.js"></script>
+    <script>
+        // Seleccionar todos los enlaces del menú
+        const enlaces = document.querySelectorAll('.nav-link');
+
+        // Recorrer los enlaces
+        enlaces.forEach(enlace => {
+            // Agregar un evento click a cada enlace
+            enlace.addEventListener('click', function(evento) {
+                // Prevenir el comportamiento por defecto del enlace
+                evento.preventDefault();
+
+                // Obtener el href del enlace
+                const href = enlace.getAttribute('href');
+
+                // Obtener el elemento al que se desplazará
+                const elemento = document.querySelector(href);
+
+                // Obtener la posición del elemento
+                const posicion = elemento.offsetTop - 100;
+
+                // Desplazar la página hasta la posición del elemento
+                window.scrollTo({
+                    top: posicion,
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        document.getElementById('send-button').addEventListener('click', function(event) {
+            event.preventDefault();
+            const form = document.querySelector('form');
+            const requeridos = document.querySelectorAll('[required]');
+            let errores = 0;
+            requeridos.forEach(requerido => {
+                if (requerido.value.trim() === '') {
+                    requerido.classList.add('is-invalid');
+                    errores++;
+                } else {
+                    requerido.classList.remove('is-invalid');
+                    requerido.classList.add('is-valid');
+                }
+                // Agregamos una validación para los campos de correo electrónico
+                if (requerido.type === 'email') {
+                    const re = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
+                    if (!re.test(requerido.value.trim())) {
+                        requerido.classList.add('is-invalid');
+                        errores++;
+                    }
+                }
+
+            });
+            if (!document.getElementById('condiciones').checked) {
+                errores++;
+            }
+            if (errores === 0) {
+                document.getElementById('formulario-contacto').submit();
+            }
+            // Agregamos la clase 'was-validated' al formulario después de la validación
+            form.classList.add('was-validated');
+        });
+
+        // Agregamos un evento 'input' a cada campo requerido para validar mientras el usuario está ingresando los datos
+        const requeridos = document.querySelectorAll('[required]');
+        requeridos.forEach(requerido => {
+            requerido.addEventListener('input', function() {
+                if (requerido.value.trim() === '') {
+                    requerido.classList.add('is-invalid');
+                    requerido.classList.remove('is-valid');
+                } else {
+                    requerido.classList.remove('is-invalid');
+                    requerido.classList.add('is-valid');
+                }
+
+                // Agregamos una validación para los campos de correo electrónico
+                if (requerido.type === 'email') {
+                    const re = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
+                    if (!re.test(requerido.value.trim())) {
+                        requerido.classList.add('is-invalid');
+                        requerido.classList.remove('is-valid');
+                    }
+                }
+            });
+        });
+
+        crearTarjetasServicio(JSON.parse(<?php echo $respuestaEndpointServicios; ?>));
+
+        // esta funcion crea las tarjetas de servicios que son un componente HTML reutilizable
+        function crearTarjetasServicio(servicios) {
+            servicios.data.forEach(servicio => {
+                const contenedorServicios = document.getElementById('contenido-servicios');
+                let tarjeta = `
+                    <div class="card col-6 col-sm-6 col-md-6 col-lg-3">
+                        <img src="${servicio.imagen}" class="card-img-top" alt="${servicio.nombre}" loading="lazy">
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold">${servicio.nombre}</h5>
+                            <p class="card-text">${servicio.texto}</p>
+                            <a href="#contacto" class="nav-link btn btn-info btn-block" onclick="llenarCampoServicio('${servicio.nombre}')">Contacto</a>
+                        </div>
+                    </div>
+                `;
+                contenedorServicios.insertAdjacentHTML('beforeend', tarjeta);
+            });
+        }
+
+        function llenarCampoServicio(servicio) {
+            document.getElementById('servicio').value = servicio;
+        }
+
+
+        crearPreguntasFrecuentes(JSON.parse(<?php echo $respuestaEndpointPreguntas; ?>));
+        // esta funcion crea las tarjetas de servicios que son un componente HTML reutilizable
+        function crearPreguntasFrecuentes(preguntas) {
+            console.log(preguntas);
+            preguntas.data.forEach(pregunta => {
+                const contenedorPreguntas = document.getElementById('accordionExample');
+                let tarjeta = `
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${pregunta.id}" aria-expanded="false" aria-controls="collapse${pregunta.id}">
+                                ${pregunta.pregunta}
+                            </button>
+                        </h2>
+                        <div id="collapse${pregunta.id}" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                            <div class="accordion-body">
+                                ${pregunta.respuesta}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                contenedorPreguntas.insertAdjacentHTML('beforeend', tarjeta);
+            });
+        }
+
+        mostrarMensajeFormulario('<?php echo $respuesta_formulario; ?>');
+
+        function mostrarMensajeFormulario(mensaje) {
+            if (mensaje !== '') {
+                document.getElementById('mensaje-formulario').textContent = mensaje;
+                document.getElementById('mensaje-formulario').classList.add('alert', 'alert-info');
+                document.getElementById('link-contacto').click();
+            }
+        }
+    </script>
 </body>
 
 </html>
