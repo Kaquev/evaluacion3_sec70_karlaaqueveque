@@ -1,3 +1,25 @@
+<?php
+// Función generica para obtener data de la API
+function obtenerDataAPI($endpoint, $token)
+{
+    $ch = curl_init($endpoint);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Authorization: Bearer ' . $token));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $resultado = curl_exec($ch);
+    if (!$resultado) {
+        return 'Error al obtener la data ' . curl_error($ch);
+    }
+    return $resultado;
+}
+
+// consumo enpoint servicios
+$respuestaEndpointServicios = obtenerDataAPI('http://localhost/backend_unidad2/categoria/', 'get');
+$respuestaEndpointServicios = json_encode($respuestaEndpointServicios);
+// consumo enpoint preguntas frecuentes
+$respuestaEndpointPreguntas = obtenerDataAPI('http://localhost/backend_unidad2/preguntas/', 'get');
+$respuestaEndpointPreguntas = json_encode($respuestaEndpointPreguntas);
+
+?>
 <!DOCTYPE html>
 <html lang="es">
 
